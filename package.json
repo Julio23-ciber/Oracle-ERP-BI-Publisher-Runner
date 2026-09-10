@@ -1,0 +1,355 @@
+{
+  "name": "Oracle-ERP-BI-Publisher-Runner",
+  "displayName": "Oracle ERP BI Publisher Runner",
+  "description": "Ejecuta SQL contra Oracle Fusion y publica Data Models usando los web services estandar de BI Publisher. Sin dependencias externas.",
+  "version": "1.0.0",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Data Science",
+    "Other"
+  ],
+  "keywords": [
+    "oracle",
+    "fusion",
+    "bi publisher",
+    "sql",
+    "erp"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tu-usuario/Oracle-ERP-BI-Publisher-Runner.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tu-usuario/Oracle-ERP-BI-Publisher-Runner/issues"
+  },
+  "homepage": "https://github.com/tu-usuario/Oracle-ERP-BI-Publisher-Runner#readme",
+  "activationEvents": [
+    "onLanguage:sql",
+    "onView:OracleERPBIPublisherRunner.connections",
+    "onView:OracleERPBIPublisherRunner.results"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "OracleERPBIPublisherRunner",
+          "title": "Fusion SQL",
+          "icon": "resources/icon.svg"
+        }
+      ],
+      "panel": [
+        {
+          "id": "OracleERPBIPublisherRunnerPanel",
+          "title": "Resultados SQL",
+          "icon": "resources/panel-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "OracleERPBIPublisherRunner": [
+        {
+          "id": "OracleERPBIPublisherRunner.connections",
+          "name": "Conexiones"
+        },
+        {
+          "id": "OracleERPBIPublisherRunner.history",
+          "name": "Historial"
+        }
+      ],
+      "OracleERPBIPublisherRunnerPanel": [
+        {
+          "id": "OracleERPBIPublisherRunner.results",
+          "name": "Resultados",
+          "type": "webview"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "OracleERPBIPublisherRunner.connections",
+        "contents": "Aun no hay conexiones a Oracle Fusion.\n[Añadir conexión](command:OracleERPBIPublisherRunner.addConnection)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "OracleERPBIPublisherRunner.addConnection",
+        "title": "Añadir conexión",
+        "category": "Fusion SQL",
+        "icon": "$(add)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.editConnection",
+        "title": "Editar conexión",
+        "category": "Fusion SQL",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.deleteConnection",
+        "title": "Eliminar conexión",
+        "category": "Fusion SQL",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.setActiveConnection",
+        "title": "Usar esta conexión",
+        "category": "Fusion SQL",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.testConnection",
+        "title": "Probar conexión",
+        "category": "Fusion SQL",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.runQuery",
+        "title": "Ejecutar SQL",
+        "category": "Fusion SQL",
+        "icon": "$(play)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.publishAsDataModel",
+        "title": "Publicar como Data Model",
+        "category": "Fusion SQL",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.newWorksheet",
+        "title": "Nueva hoja SQL",
+        "category": "Fusion SQL",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.setRowLimit",
+        "title": "Cambiar límite de filas",
+        "category": "Fusion SQL",
+        "icon": "$(list-ordered)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.showResults",
+        "title": "Mostrar panel de resultados",
+        "category": "Fusion SQL",
+        "icon": "$(table)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.describeService",
+        "title": "Inspeccionar firmas del CatalogService (WSDL)",
+        "category": "Fusion SQL"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.bootstrap",
+        "title": "Crear objetos de trabajo en el catálogo",
+        "category": "Fusion SQL"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.rerunFromHistory",
+        "title": "Reejecutar",
+        "category": "Fusion SQL",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.clearHistory",
+        "title": "Limpiar historial",
+        "category": "Fusion SQL",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.showOutput",
+        "title": "Mostrar registro",
+        "category": "Fusion SQL"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.moveResultsBelow",
+        "title": "Mover resultados abajo",
+        "category": "Fusion SQL",
+        "icon": "$(split-vertical)"
+      },
+      {
+        "command": "OracleERPBIPublisherRunner.editParameters",
+        "title": "Editar parámetros de la consulta",
+        "category": "Fusion SQL",
+        "icon": "$(symbol-parameter)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "OracleERPBIPublisherRunner.addConnection",
+          "when": "view == OracleERPBIPublisherRunner.connections",
+          "group": "navigation@1"
+        },
+        {
+          "command": "OracleERPBIPublisherRunner.clearHistory",
+          "when": "view == OracleERPBIPublisherRunner.history",
+          "group": "navigation@1"
+        },
+        {
+          "command": "OracleERPBIPublisherRunner.setRowLimit",
+          "when": "view == OracleERPBIPublisherRunner.results",
+          "group": "navigation@1"
+        },
+        {
+          "command": "OracleERPBIPublisherRunner.editParameters",
+          "when": "view == OracleERPBIPublisherRunner.results",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "OracleERPBIPublisherRunner.setActiveConnection",
+          "when": "view == OracleERPBIPublisherRunner.connections && viewItem == connection",
+          "group": "inline@1"
+        },
+        {
+          "command": "OracleERPBIPublisherRunner.editConnection",
+          "when": "view == OracleERPBIPublisherRunner.connections && viewItem == connection",
+          "group": "inline@2"
+        },
+        {
+          "command": "OracleERPBIPublisherRunner.testConnection",
+          "when": "view == OracleERPBIPublisherRunner.connections && viewItem == connection",
+          "group": "1_run@1"
+        },
+        {
+          "command": "OracleERPBIPublisherRunner.bootstrap",
+          "when": "view == OracleERPBIPublisherRunner.connections && viewItem == connection",
+          "group": "1_run@2"
+        },
+        {
+          "command": "OracleERPBIPublisherRunner.deleteConnection",
+          "when": "view == OracleERPBIPublisherRunner.connections && viewItem == connection",
+          "group": "9_del@1"
+        },
+        {
+          "command": "OracleERPBIPublisherRunner.rerunFromHistory",
+          "when": "view == OracleERPBIPublisherRunner.history && viewItem == historyItem",
+          "group": "inline@1"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "OracleERPBIPublisherRunner.runQuery",
+          "when": "editorLangId == sql",
+          "group": "navigation@1"
+        },
+        {
+          "command": "OracleERPBIPublisherRunner.publishAsDataModel",
+          "when": "editorLangId == sql",
+          "group": "navigation@2"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "OracleERPBIPublisherRunner.runQuery",
+          "when": "editorLangId == sql",
+          "group": "fusion@1"
+        },
+        {
+          "command": "OracleERPBIPublisherRunner.publishAsDataModel",
+          "when": "editorLangId == sql",
+          "group": "fusion@2"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "OracleERPBIPublisherRunner.runQuery",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "editorTextFocus && editorLangId == sql"
+      }
+    ],
+    "configuration": {
+      "title": "Oracle Fusion SQL Runner",
+      "properties": {
+        "OracleERPBIPublisherRunner.rowLimit": {
+          "type": "number",
+          "default": 100,
+          "minimum": 0,
+          "markdownDescription": "Máximo de filas por consulta. `0` desactiva el límite — no recomendado contra tablas Fusion grandes. Se puede cambiar sobre la marcha desde el selector del panel de resultados."
+        },
+        "OracleERPBIPublisherRunner.workFolder": {
+          "type": "string",
+          "default": "/Custom/OracleERPBIPublisherRunner",
+          "description": "Carpeta del catálogo de BI Publisher donde viven los objetos de trabajo. Debe estar bajo /Custom."
+        },
+        "OracleERPBIPublisherRunner.dataSource": {
+          "type": "string",
+          "default": "ApplicationDB_FSCM",
+          "enum": [
+            "ApplicationDB_FSCM",
+            "ApplicationDB_HCM",
+            "ApplicationDB_CRM"
+          ],
+          "description": "Data source de BI Publisher contra el que se ejecuta el SQL."
+        },
+        "OracleERPBIPublisherRunner.wrapMode": {
+          "type": "string",
+          "default": "json",
+          "enum": [
+            "json",
+            "xml",
+            "none"
+          ],
+          "markdownDescription": "Cómo se envuelve el SQL para no depender de las columnas. `json` usa `JSON_ARRAYAGG` (Oracle 19c+), `xml` usa `DBMS_XMLGEN` (cualquier versión), `none` no envuelve."
+        },
+        "OracleERPBIPublisherRunner.requestTimeout": {
+          "type": "number",
+          "default": 180,
+          "description": "Timeout de cada llamada SOAP, en segundos."
+        },
+        "OracleERPBIPublisherRunner.resultsLocation": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "panel",
+            "editor"
+          ],
+          "enumDescriptions": [
+            "Panel inferior si está disponible; si no, pestaña del editor.",
+            "Forzar el panel inferior.",
+            "Forzar una pestaña del editor."
+          ],
+          "markdownDescription": "Dónde se muestran los resultados. `auto` detecta si el panel inferior está registrado y recurre al editor si no lo está."
+        },
+        "OracleERPBIPublisherRunner.editorFallbackPosition": {
+          "type": "string",
+          "default": "below",
+          "enum": [
+            "below",
+            "beside"
+          ],
+          "enumDescriptions": [
+            "Debajo del editor SQL.",
+            "A la derecha del editor SQL."
+          ],
+          "markdownDescription": "Dónde se abre la pestaña de resultados cuando se usa el respaldo del editor (es decir, cuando el panel inferior no está disponible)."
+        },
+        "OracleERPBIPublisherRunner.promptParameters": {
+          "type": "string",
+          "default": "always",
+          "enum": [
+            "always",
+            "onlyNew"
+          ],
+          "enumDescriptions": [
+            "Preguntar en cada ejecución, con el último valor ya escrito.",
+            "Preguntar solo la primera vez; después reutilizar el valor guardado."
+          ],
+          "markdownDescription": "Cuándo pedir los valores de los bind variables (`:NOMBRE`) de la consulta."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "npx --yes @vscode/vsce package --allow-missing-repository",
+    "test": "node test/integration.js && node test/binds.js && node test/resultview.js && node test/wiring.js"
+  }
+}
