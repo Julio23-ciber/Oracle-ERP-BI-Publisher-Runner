@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.0
+## 1.0.1
 
 - **Parámetros de entrada.** Las consultas con bind variables (`:P_ID`) ya se
   ejecutan: la extensión los detecta, pide los valores, los declara en el
@@ -13,7 +13,7 @@
 - Nuevo ajuste `OracleERPBIPublisherRunner.promptParameters`: `always` u `onlyNew`.
  
 
-## 1.0.0
+## 1.0.1
 
 - Cambio de Iconos
 
