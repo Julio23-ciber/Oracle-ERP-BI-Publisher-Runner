@@ -2,11 +2,16 @@
   "name": "Oracle-ERP-BI-Publisher-Runner",
   "displayName": "Oracle ERP BI Publisher Runner",
   "description": "Ejecuta SQL contra Oracle Fusion y publica Data Models usando los web services estandar de BI Publisher. Sin dependencias externas.",
-  "version": "1.0.0",
-  "publisher": "local",
+  "version": "1.0.2",
+  "publisher": "Julio23",
   "license": "MIT",
   "engines": {
     "vscode": "^1.80.0"
+  },
+  "icon": "resources/base-de-datos.png",
+  "galleryBanner": {
+    "color": "#1C2A3A",
+    "theme": "dark"
   },
   "categories": [
     "Programming Languages",
@@ -22,12 +27,8 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/tu-usuario/Oracle-ERP-BI-Publisher-Runner.git"
-  },
-  "bugs": {
-    "url": "https://github.com/tu-usuario/Oracle-ERP-BI-Publisher-Runner/issues"
-  },
-  "homepage": "https://github.com/tu-usuario/Oracle-ERP-BI-Publisher-Runner#readme",
+    "url": "https://github.com/Julio23-ciber/Oracle-ERP-BI-Publisher-Runner.git"
+  }, 
   "activationEvents": [
     "onLanguage:sql",
     "onView:OracleERPBIPublisherRunner.connections",

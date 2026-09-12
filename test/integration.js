@@ -111,6 +111,18 @@ async function main() {
         const iLim = built.effectiveSql.indexOf('ROWNUM <= 50');
         assert.ok(iAgg >= 0 && iLim > iAgg, 'ROWNUM debe quedar dentro del JSON_ARRAYAGG');
     });
+    // ORA-40478: sin RETURNING CLOB en el JSON_OBJECT interior, cada fila se
+    // serializa a VARCHAR2(4000) y las tablas anchas revientan.
+    check('cada fila se serializa como CLOB, no como VARCHAR2(4000)', () => {
+        assert.ok(
+            /JSON_OBJECT\(\*\s+RETURNING\s+CLOB\)/i.test(built.effectiveSql),
+            'falta RETURNING CLOB en el JSON_OBJECT de cada fila'
+        );
+        assert.ok(
+            /JSON_ARRAYAGG\([\s\S]*RETURNING\s+CLOB\)/i.test(built.effectiveSql),
+            'falta RETURNING CLOB en el JSON_ARRAYAGG'
+        );
+    });
     check('contentOnly no incluye metadata ni security', () => {
         const names = Object.keys(readZip(built.zip));
         assert.ok(!names.includes('~security.sec') && !names.includes('~metadata.meta'));

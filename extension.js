@@ -23,6 +23,13 @@ const { ConnectionsProvider, HistoryProvider } = require('./src/providers');
 const { ResultView, ROW_PRESETS } = require('./src/resultView');
 
 const WORK_MODEL = 'FSR_WORK';   // data model de trabajo, se reescribe en cada consulta
+
+// Fallos que significan "esta base no serializa bien esta consulta a JSON":
+// ORA-40478 fila mas ancha de 4000 bytes, ORA-40441/40442 JSON mal formado,
+// ORA-00907/00904 sintaxis JSON_OBJECT no soportada, ORA-00932 tipo no
+// convertible (LONG, XMLTYPE, colecciones). En todos ellos DBMS_XMLGEN sirve.
+const JSON_WRAP_FAILURE =
+    /ORA-40478|ORA-40441|ORA-40442|ORA-00907|ORA-00904|ORA-00932|JSON_OBJECT|RESULT no es JSON valido/i;
 let output;
 let store;
 let history;
@@ -45,6 +52,8 @@ function cfg(key) {
 function activate(context) {
     extContext = context;
     output = vscode.window.createOutputChannel('Fusion SQL Runner');
+    // marca de version: sirve para comprobar que corre el build esperado
+    log(`Oracle ERP BI Publisher Runner ${context.extension?.packageJSON?.version || '?'} activado.`);
     store = new ConnectionStore(context);
     history = new HistoryProvider(context);
 
@@ -476,19 +485,20 @@ async function runQuery(sqlOverride, bindOverride) {
     await vscode.window.withProgress(
         { location: vscode.ProgressLocation.Window, title: 'Fusion SQL: ejecutando…' },
         async () => {
-            try {
+            // Publica el data model con el modo indicado y devuelve las filas.
+            const attempt = async (mode) => {
                 const built = buildDataModel({
                     name: WORK_MODEL,
                     folder: conn.folder,
                     sql,
                     dataSource: conn.dataSource,
-                    wrapMode,
+                    wrapMode: mode,
                     maxRows,
                     useRowsParam: false,
                     contentOnly: true,
                     bindParameters: bindNames.map((n) => ({ name: n, value: binds[n] })),
                 });
-                log(`SQL efectivo:\n${built.effectiveSql}`);
+                log(`SQL efectivo (wrapMode=${mode}):\n${built.effectiveSql}`);
                 if (bindNames.length) {
                     log('Parámetros: ' +
                         bindNames.map((n) => `:${n} = ${binds[n] === '' ? 'NULL' : binds[n]}`).join(', '));
@@ -500,7 +510,30 @@ async function runQuery(sqlOverride, bindOverride) {
                     format: 'xml',
                     params: bindNames.length ? binds : null,
                 });
-                const { rows } = extractResult(raw, wrapMode);
+                return extractResult(raw, mode).rows;
+            };
+
+            try {
+                let rows;
+                try {
+                    rows = await attempt(wrapMode);
+                } catch (err) {
+                    // La envoltura JSON depende de la version de la base y del
+                    // ancho de las filas. Si falla por eso, DBMS_XMLGEN siempre
+                    // funciona: se reintenta una vez antes de dar error.
+                    if (wrapMode === 'json' && JSON_WRAP_FAILURE.test(err.message || '')) {
+                        log(`La envoltura JSON falló (${err.message.split('\n')[0]}). ` +
+                            'Reintentando con DBMS_XMLGEN…');
+                        resultView.setBusy('La envoltura JSON falló; reintentando con XML…');
+                        rows = await attempt('xml');
+                        vscode.window.showWarningMessage(
+                            'La envoltura JSON no funciona en esta base; se usó DBMS_XMLGEN. ' +
+                            'Fija OracleERPBIPublisherRunner.wrapMode en "xml" para evitar el reintento.'
+                        );
+                    } else {
+                        throw err;
+                    }
+                }
                 const ms = Date.now() - started;
 
                 await history.add({ sql, ok: true, rows: rows.length, ms, at: Date.now() });
@@ -724,6 +757,11 @@ function reportError(err, title, ctx = {}) {
     if (/does not exist|not found|no existe/i.test(m) && ctx.reportPath) {
         hint = `\n\nUn .xdm no se ejecuta solo: necesita un reporte que lo referencie. ` +
             `Crea una vez ${ctx.reportPath} en la UI de BI Publisher apuntando a ${ctx.modelPath}.`;
+    } else if (/ORA-40478|ORA-19202/i.test(m)) {
+        hint = '\n\nUna fila supera los 4000 bytes al serializarse. La extensión ya envuelve ' +
+            'con RETURNING CLOB: si el error persiste, es que el SQL del editor trae su propia ' +
+            'envoltura. Deja en el editor solo tu consulta (p.ej. SELECT * FROM HZ_PARTY_SITES) ' +
+            'y que la extensión la envuelva.';
     } else if (/JSON_OBJECT|ORA-00907|ORA-00904/i.test(m)) {
         hint = '\n\nSi tu base no soporta JSON_OBJECT(*) (necesita Oracle 19c+), ' +
             'cambia OracleERPBIPublisherRunner.wrapMode a "xml".';

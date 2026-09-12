@@ -95,6 +95,50 @@ function applyRowLimit(sql, maxRows, useParam) {
 }
 
 /**
+ * Corrige los JSON_OBJECT(*) / JSON_ARRAYAGG(...) que el usuario haya escrito
+ * a mano sin RETURNING CLOB.
+ *
+ * Por defecto devuelven VARCHAR2(4000): una sola fila ancha basta para
+ * ORA-40478. Es tipico al pegar en el editor un SQL ya envuelto de una version
+ * anterior. Solo se toca la forma sin clausula RETURNING; si el usuario ya
+ * puso una (CLOB, VARCHAR2(32767), BLOB...), se respeta.
+ */
+function hardenJsonReturning(sql) {
+    // 1) cada fila: JSON_OBJECT(*) -> JSON_OBJECT(* RETURNING CLOB)
+    let out = String(sql).replace(/\bJSON_OBJECT\s*\(\s*\*\s*\)/gi, 'JSON_OBJECT(* RETURNING CLOB)');
+
+    // 2) el agregado. Hace falta emparejar parentesis a mano: el RETURNING de
+    //    un JSON_OBJECT anidado no cuenta como el del JSON_ARRAYAGG.
+    const re = /\bJSON_ARRAYAGG\s*\(/gi;
+    let m;
+    while ((m = re.exec(out)) !== null) {
+        const open = m.index + m[0].length - 1;
+        let depth = 0, close = -1;
+        for (let i = open; i < out.length; i++) {
+            if (out[i] === '(') depth++;
+            else if (out[i] === ')' && --depth === 0) { close = i; break; }
+        }
+        if (close < 0) break;               // parentesis sin cerrar: no tocar
+
+        // ¿hay un RETURNING en el nivel superior de la llamada?
+        let d = 0, hasReturning = false;
+        const inner = out.slice(open + 1, close);
+        for (let i = 0; i < inner.length; i++) {
+            if (inner[i] === '(') d++;
+            else if (inner[i] === ')') d--;
+            else if (d === 0 && /[Rr]/.test(inner[i]) &&
+                /^RETURNING\b/i.test(inner.slice(i)) &&
+                (i === 0 || /\s|\)/.test(inner[i - 1]))) { hasReturning = true; break; }
+        }
+        if (hasReturning) { re.lastIndex = close; continue; }
+
+        out = `${out.slice(0, close)} RETURNING CLOB${out.slice(close)}`;
+        re.lastIndex = close + ' RETURNING CLOB'.length;
+    }
+    return out;
+}
+
+/**
  * Envuelve el SQL para que devuelva UNA sola columna RESULT.
  *
  * El Data Engine solo emite los elementos declarados en <output>, asi que con
@@ -108,7 +152,11 @@ function wrapSql(sql, mode, bindNames = []) {
 
     if (mode === 'json') {
         return {
-            sql: `SELECT JSON_ARRAYAGG(JSON_OBJECT(*) RETURNING CLOB) AS RESULT\nFROM (\n${clean}\n)`,
+            // RETURNING CLOB en AMBOS niveles. Sin el del JSON_OBJECT interior
+            // cada fila se serializa a VARCHAR2(4000) y una fila ancha
+            // (p.ej. SELECT * FROM HZ_PARTY_SITES) revienta con
+            // ORA-40478: valor de salida demasiado grande (maximo: 4000).
+            sql: `SELECT JSON_ARRAYAGG(JSON_OBJECT(* RETURNING CLOB) RETURNING CLOB) AS RESULT\nFROM (\n${clean}\n)`,
             columns: [{ name: 'RESULT', dataType: 'xsd:string' }],
         };
     }
@@ -294,7 +342,8 @@ function buildDataModel(opts) {
     const catalogPath = `${folder.replace(/\/+$/, '')}/${name}.xdm`;
 
     const bindNames = bindParameters.map((p) => p.name);
-    const limited = applyRowLimit(userSql, maxRows, useRowsParam);
+    // el SQL del usuario puede traer JSON_OBJECT(*) sin RETURNING CLOB
+    const limited = applyRowLimit(hardenJsonReturning(userSql), maxRows, useRowsParam);
     const wrapped = wrapSql(limited.sql, wrapMode, bindNames);
     const columns = wrapped.columns || explicitColumns || [{ name: '1', dataType: 'xsd:double' }];
 
@@ -337,6 +386,7 @@ module.exports = {
     ROWS_PARAM,
     findBindParameters,
     inferDataType,
+    hardenJsonReturning,
     buildDataModel,
     buildXdm,
     applyRowLimit,
